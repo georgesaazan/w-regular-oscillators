@@ -85,62 +85,29 @@ for i=1:length(q)
             end
     end
 end
-%% Simulation fast 
-N=100; %number of steps
+%% Simulation fast&slow 
 A=osc(3,0.1); 
 x=[-1.5;-0.5;2;-1]; %initial state
+ps=[0.7,0.98];
+Ns=[100,1000];
+for i=1:2
+p=ps(i);
+N=Ns(i);
 traj=x; 
-sigma=[];
 k=[0];
+sigma=[];
 st={'Q'};
-for i=1:N
-sigma=[sigma randi([1,m])];    
-end
+P=[p,0.5*(1-p),0.5*(1-p);0.5*(1-p),p,0.5*(1-p);0.5*(1-p),0.5*(1-p),p];
+mc=dtmc(P); %define Markov chain with transition matrix P
+sigma(1:N)=simulate(mc,N-1);
 for i=1:N
 traj=[traj A{sigma(i)}*traj(:,end)];
-st=[st delta([st{end},sigma(i)])];
-k=[k k(end)+strcmp(st{end},'Q')];
+st=[st delta([st{i},sigma(i)])];
+if i~=1
+k=[k k(i)+strcmp(st{i},'Q')];
+else
+k=[k k(i)];
 end
-figure();
-subplot(3,1,1);
-stairs([0:N-1],sigma)
-axis([0 N 0.9 3.1])
-xlabel('t')
-ylabel('\theta(t)')
-subplot(3,1,2);
-plot(0:N-1,k(1:N)./[1:N],'--')
-xlabel('t')
-ylabel('\kappa^{\theta(t)}/t')
-ylim([0,0.5]);
-subplot(3,1,3);
-plot(0:N-1,traj(1,1:N),'--')
-hold on;
-plot(0:N-1,traj(2,1:N),'--')
-hold on;
-plot(0:N-1,traj(3,1:N),'--')
-hold on;
-plot(0:N-1,traj(4,1:N),'--')
-xlabel('t')
-ylabel('traj')
-%% Simulation slow
-traj=x; 
-k=[0];
-sigma=[];
-st={'Q'};
-for i=1:N
-adm0=[];
-for j=1:m
-if ~strcmp(delta([st{end},j]),'Q')
-adm0=[adm0 j];
-end
-end
-if mod(i,25)==1
-    adm0=[randi(m)];
-end
-sigma=[sigma adm0(randi(length(adm0)))];
-traj=[traj A{sigma(end)}*traj(:,end)];
-st=[st delta([st{end},sigma(end)])];
-k=[k k(end)+strcmp(st{end},'Q')];
 end
 figure();
 subplot(3,1,1);
@@ -162,3 +129,4 @@ hold on;
 plot(0:N-1,traj(4,1:N),'--')
 xlabel('t')
 ylabel('traj')
+end
